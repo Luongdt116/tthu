@@ -81,7 +81,7 @@ const moonGlow = new THREE.Sprite(
     fog: false,
   }),
 );
-moonGlow.renderOrder = 0;
+moonGlow.renderOrder = -101;
 moonGroup.add(moonGlow);
 
 const moonTexture = new THREE.TextureLoader().load(
@@ -100,7 +100,7 @@ const moonSprite = new THREE.Sprite(
     fog: false,
   }),
 );
-moonSprite.renderOrder = 1;
+moonSprite.renderOrder = -100;
 moonGroup.add(moonSprite);
 
 let moonBaseY = 18;
@@ -504,6 +504,7 @@ function createLanternMesh() {
     transparent: true,
     opacity: 0.7,
     blending: THREE.AdditiveBlending,
+    depthWrite: false,
   });
   const glow = new THREE.Sprite(spriteMat);
   glow.scale.set(3.2, 3.2, 1);
