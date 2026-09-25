@@ -341,56 +341,74 @@ const blossomMat = new THREE.PointsMaterial({
 const blossomParticles = new THREE.Points(blossomGeo, blossomMat);
 treeGroup.add(blossomParticles);
 
-// THE LITTLE PRINCE & FOX - transparent 3D storybook character sprite
-const companionsGroup = new THREE.Group();
-companionsGroup.position.set(3.0, 4.05, 2.2);
-islandGroup.add(companionsGroup);
+// RABBITS
+function createRabbit() {
+  const group = new THREE.Group();
+  const rabbitMat = new THREE.MeshStandardMaterial({
+    color: 0xf8f8ff,
+    roughness: 0.5,
+  });
 
-const companionsTexture = new THREE.TextureLoader().load(
-  "./assets/hoang-tu-be-va-cao-3d.png",
-);
-if (THREE.sRGBEncoding) companionsTexture.encoding = THREE.sRGBEncoding;
-companionsTexture.generateMipmaps = false;
-companionsTexture.minFilter = THREE.LinearFilter;
-companionsTexture.magFilter = THREE.LinearFilter;
+  const bodyGeo = new THREE.SphereGeometry(0.5, 12, 12);
+  bodyGeo.scale(0.8, 1, 0.9);
+  const bodyMesh = new THREE.Mesh(bodyGeo, rabbitMat);
+  bodyMesh.position.y = 0.4;
+  group.add(bodyMesh);
 
-const companionsSprite = new THREE.Sprite(
-  new THREE.SpriteMaterial({
-    map: companionsTexture,
-    color: 0xffffff,
-    transparent: true,
-    alphaTest: 0.02,
-    depthWrite: false,
-    fog: true,
-  }),
-);
-companionsSprite.renderOrder = 3;
-companionsGroup.add(companionsSprite);
+  const headGeo = new THREE.SphereGeometry(0.35, 12, 12);
+  const headMesh = new THREE.Mesh(headGeo, rabbitMat);
+  headMesh.position.set(0, 0.85, 0.2);
+  group.add(headMesh);
 
-const companionsShadow = new THREE.Mesh(
-  new THREE.CircleGeometry(1.15, 32),
-  new THREE.MeshBasicMaterial({
-    color: 0x160b1d,
-    transparent: true,
-    opacity: 0.34,
-    depthWrite: false,
-  }),
-);
-companionsShadow.rotation.x = -Math.PI / 2;
-companionsShadow.scale.set(1.5, 0.82, 1);
-companionsShadow.position.y = 0.035;
-companionsGroup.add(companionsShadow);
+  const earGeo = new THREE.CylinderGeometry(0.04, 0.08, 0.5, 8);
+  const earLeft = new THREE.Mesh(earGeo, rabbitMat);
+  earLeft.position.set(-0.12, 1.25, 0.18);
+  earLeft.rotation.z = 0.15;
+  earLeft.rotation.x = -0.1;
+  group.add(earLeft);
 
-let companionsHalfHeight = 3.6;
-function updateCompanionsLayout() {
-  const compact = window.innerWidth < 768;
-  const width = compact ? 4.3 : 4.8;
-  const height = compact ? 6.45 : 7.2;
-  companionsHalfHeight = height / 2;
-  companionsSprite.scale.set(width, height, 1);
-  companionsSprite.position.y = companionsHalfHeight;
+  const earRight = earLeft.clone();
+  earRight.position.x = 0.12;
+  earRight.rotation.z = -0.15;
+  group.add(earRight);
+
+  return group;
 }
-updateCompanionsLayout();
+
+const rabbits = [];
+for (let i = 0; i < 4; i++) {
+  const rabbitMesh = createRabbit();
+  islandGroup.add(rabbitMesh);
+
+  rabbits.push({
+    mesh: rabbitMesh,
+    orbitRadius: 2.8 + Math.random() * 3.2,
+    orbitSpeed: (0.12 + Math.random() * 0.15) * (i % 2 === 0 ? 1 : -1),
+    phase: (i / 4) * Math.PI * 2,
+    baseY: 4.05,
+    hopSpeed: 4.5 + Math.random() * 2.0,
+    hopHeight: 0.15,
+    scale: 0.75 + Math.random() * 0.25,
+  });
+  rabbits[i].mesh.scale.setScalar(rabbits[i].scale);
+}
+
+function updateRabbits(time) {
+  rabbits.forEach((r) => {
+    const angle = r.phase + time * r.orbitSpeed;
+    const sign = Math.sign(r.orbitSpeed) || 1;
+
+    const x = Math.cos(angle) * r.orbitRadius;
+    const z = Math.sin(angle) * r.orbitRadius;
+    const hop = Math.abs(Math.sin(time * r.hopSpeed)) * r.hopHeight;
+
+    r.mesh.position.set(x, r.baseY + hop, z);
+
+    const dx = -Math.sin(angle) * sign;
+    const dz = Math.cos(angle) * sign;
+    r.mesh.rotation.y = Math.atan2(dx, dz);
+  });
+}
 
 // LANTERNS & MESSAGES WITH IMAGES
 const lanternsGroup = new THREE.Group();
@@ -799,8 +817,7 @@ function animate() {
   moonGroup.position.y = moonBaseY + Math.sin(time * 0.28) * 0.16;
   moonGlow.material.opacity = 0.18 + Math.sin(time * 0.45) * 0.035;
 
-  companionsSprite.position.y =
-    companionsHalfHeight + Math.sin(time * 1.15) * 0.045;
+  updateRabbits(time);
 
   if (targetCamPos && targetCamTarget) {
     camera.position.lerp(targetCamPos, 0.04);
@@ -831,5 +848,4 @@ window.addEventListener("resize", () => {
     Math.min(window.devicePixelRatio, width < 768 ? 1.5 : 2),
   );
   updateMoonLayout();
-  updateCompanionsLayout();
 });
